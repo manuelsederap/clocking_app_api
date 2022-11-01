@@ -1,6 +1,6 @@
 defmodule ClockingAppApi.Contexts.ClockContext do
   @moduledoc """
-    The Working Time Context.
+    The Clock Time Context.
   """
 
   use Timex
