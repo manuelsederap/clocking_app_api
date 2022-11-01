@@ -1,5 +1,27 @@
 # ClockingAppApi
 
+Users Module:
+
+URL's
+post: http://localhost:4000/api/users
+put: http://localhost:4000/api/users/:used_id
+delete: http://localhost:4000/api/users/:user_id
+get: http://localhost:4000/api/users?email=#{user.email}.com&username=#{user.username}
+
+
+Working Times Module:
+URL's
+post: http://localhost:4000/api/workingtimes/:user_id
+put: http://localhost:4000/api/workingtimes/:id
+delete: http://localhost:4000/api/workingtimes/:id
+get: http://localhost:4000/api/workingtimes/#{user_id}?start=#{start}&end=#{end}
+get: http://localhost:4000/api/workingtimes/:user_id/:id
+
+Clocks Module
+URL's
+post: http://localhost:4000/api/clocks/:use_id
+get: http://localhost:4000/api/clocks/:use_id
+
 To start your Phoenix server:
 
   * Install dependencies with `mix deps.get`

@@ -4,8 +4,8 @@ defmodule ClockingAppApiWeb.ClockControllerTest do
   describe "Clock Controller" do
     test "clock out users" do
       user = insert(:user, username: "testuser", email: "testuser@email.com")
-      clock = insert(:clock, user_id: user.id, time: "2019-12-31 09:14:28", status: true)
-      clock = insert(:clock, user_id: user.id, time: "2019-12-31 09:20:28", status: true)
+      insert(:clock, user_id: user.id, time: "2019-12-31 09:14:28", status: true)
+      insert(:clock, user_id: user.id, time: "2019-12-31 09:20:28", status: true)
 
       params = %{
         user_id: user.id,
@@ -19,7 +19,7 @@ defmodule ClockingAppApiWeb.ClockControllerTest do
 
     test "clock in users" do
       user = insert(:user, username: "testuser", email: "testuser@email.com")
-      clock = insert(:clock, user_id: user.id, time: "2019-12-31 18:14:28", status: false)
+      insert(:clock, user_id: user.id, time: "2019-12-31 18:14:28", status: false)
 
       params = %{
         user_id: user.id,
@@ -33,10 +33,10 @@ defmodule ClockingAppApiWeb.ClockControllerTest do
 
     test "clock users" do
       user = insert(:user, username: "testuser", email: "testuser@email.com")
-      clock = insert(:clock, user_id: user.id, time: "2019-12-31 18:14:28", status: false)
-      clock = insert(:clock, user_id: user.id, time: "2019-12-31 09:14:28", status: true)
-      clock = insert(:clock, user_id: user.id, time: "2019-12-30 18:14:28", status: false)
-      clock = insert(:clock, user_id: user.id, time: "2019-12-30 09:14:28", status: true)
+      insert(:clock, user_id: user.id, time: "2019-12-31 18:14:28", status: false)
+      insert(:clock, user_id: user.id, time: "2019-12-31 09:14:28", status: true)
+      insert(:clock, user_id: user.id, time: "2019-12-30 18:14:28", status: false)
+      insert(:clock, user_id: user.id, time: "2019-12-30 09:14:28", status: true)
 
       conn = get(build_conn(), "/api/clocks/#{user.id}")
       assert json_response(conn, 200)

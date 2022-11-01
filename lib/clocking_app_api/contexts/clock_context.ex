@@ -31,7 +31,7 @@ defmodule ClockingAppApi.Contexts.ClockContext do
     |> validate_format(:user_id, ~r/(^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$)/, message: "Invalid User Id") #changeset validation format if user id is UUID valid
     |> validate_format(:time, ~r/[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1]) (2[0-3]|[01][0-9]):[0-5][0-9]:[0-5][0-9]/, message: "time is in invalid format. Date should be in YYYY-MM-DD HH:mm:ss")
     |> validate_inclusion(:status, [true, false], message: "status is invalid, allowed values are: true or false")
-    |> validate_user
+    |> validate_user_if_exist
     |> UC.is_valid_changeset?
   end
 
@@ -44,12 +44,13 @@ defmodule ClockingAppApi.Contexts.ClockContext do
     |> cast(params, Map.keys(field))
     |> validate_required(:user_id, message: "Enter User id")
     |> validate_format(:user_id, ~r/(^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$)/, message: "Invalid User Id") #changeset validation format if user id is UUID valid
-    |> validate_user
+    |> validate_user_if_exist
     |> UC.is_valid_changeset?
   end
 
-  def validate_user(%{valid?: false} = changeset), do: changeset
-  def validate_user(%{changes: %{user_id: user_id}} = changeset) do
+  # validate user if exist in database
+  def validate_user_if_exist(%{valid?: false} = changeset), do: changeset
+  def validate_user_if_exist(%{changes: %{user_id: user_id}} = changeset) do
     case  Users |> Repo.get_by(%{id: user_id}) do
       nil -> add_error(changeset, :username, "User not found")
       _ -> changeset
@@ -60,59 +61,39 @@ defmodule ClockingAppApi.Contexts.ClockContext do
   def clock_in(params) do
     user_id = params[:user_id]
     user_id
-    |> check_if_clock_in_or_clock_out(params)
+    |> get_clock_user_latest_data()
     |> verify_if_clock_in_or_clock_out(params)
     |> insert_clock_data()
 
   end
 
-  def check_if_clock_in_or_clock_out(user_id, params) do
+  # fetch latest clock data of the user based on the time inserted in DB
+  def get_clock_user_latest_data(user_id) do
     Clocks
-    |> where([c], c.user_id == ^user_id and c.status == true)
+    |> where([c], c.user_id == ^user_id)
     |> order_by([c], desc: c.inserted_at)
     |> Repo.all()
     |> List.first()
-    # |> raise()
   end
 
+  # if data is nil, User tag as clock-in
   def verify_if_clock_in_or_clock_out(nil, params), do: params |> Map.put(:clockin, true)
+  # if data found, check the clock in datetime compare into request time parameter
   def verify_if_clock_in_or_clock_out(clock, params) do
     user_clock = clock.time
     req_clock = Timex.parse!(params[:time], "{ISO:Extended}")
-    check_time_diff(NaiveDateTime.diff(req_clock, user_clock, :second), params, user_clock, req_clock)
-  end
 
-  def check_time_diff(time_diff, params, _, _) when time_diff >= 86400 do
-    params |> Map.put(:clockin, true)
-  end
-
-  def check_time_diff(time_diff, params, user_clock, req_clock) when time_diff < 86400 do
-    {user_clock_year, user_clock_month, user_clock_day} = transform_date(NaiveDateTime.to_date(user_clock))
-    {req_clock_year, req_clock_month, req_clock_day} = transform_date(NaiveDateTime.to_date(req_clock))
-
-    if user_clock_year == req_clock_year and user_clock_month == req_clock_month and user_clock_day == req_clock_day do
-      case NaiveDateTime.compare(user_clock, req_clock) do
-        :lt ->
-          params |> Map.put(:clockin, false)
-        :gt ->
-          params |> Map.put(:clockin, true)
-        _ ->
-          params |> Map.put(:clockin, false)
-      end
+    # if the latest user clock data status is true and the time is early than request time parameter
+    if clock.status == true and NaiveDateTime.compare(user_clock, req_clock) == :lt do
+      # User will tag as clock-out
+      params |> Map.put(:clockin, false)
     else
+      # else User will tag as clock-in
       params |> Map.put(:clockin, true)
     end
   end
 
-  defp transform_date(datetime) do
-    datetime
-    |> to_string
-    |> String.split(" ")
-    |> Enum.at(0)
-    |> String.split("-")
-    |> List.to_tuple()
-  end
-
+  # insert data pattern matching the User tag, if User tag clockin is true, status is true
   def insert_clock_data(%{clockin: true} = params) do
     %Clocks{}
     |> Clocks.changeset(%{
@@ -123,6 +104,7 @@ defmodule ClockingAppApi.Contexts.ClockContext do
     |> Repo.insert!()
   end
 
+  # insert data pattern matchinng the User tag, if User tag clockin is false, status is false
   def insert_clock_data(%{clockin: false} = params) do
     %Clocks{}
     |> Clocks.changeset(%{
@@ -143,6 +125,7 @@ defmodule ClockingAppApi.Contexts.ClockContext do
       time: c.time,
       status: c.status
     })
+    |> order_by([c], desc: c.inserted_at)
     |> Repo.all()
   end
 
