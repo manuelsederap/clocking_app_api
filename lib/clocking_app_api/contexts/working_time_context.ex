@@ -109,7 +109,7 @@ defmodule ClockingAppApi.Contexts.WorkingTimeContext do
 
   def create_working_time({:error, changeset}), do: {:error, changeset}
   def create_working_time(params) do
-    working_time =
+    _working_time =
       %WorkingTimes{}
       |> WorkingTimes.changeset(params)
       |> Repo.insert!()
@@ -161,6 +161,17 @@ defmodule ClockingAppApi.Contexts.WorkingTimeContext do
       end: wtc.end
     })
     |> Repo.one()
+  end
+
+  def get_all_working_times do
+    WorkingTimes
+    |> select([wtc], %{
+      id: wtc.id,
+      user_id: wtc.user_id,
+      start: wtc.start,
+      end: wtc.end
+    })
+    |> Repo.all()
   end
 
   def get_working_time_by_id(id), do: WorkingTimes |> Repo.get_by(%{id: id})

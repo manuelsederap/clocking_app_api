@@ -42,5 +42,12 @@ defmodule ClockingAppApiWeb.UserControllerTest do
       assert json_response(conn, 200)["username"] == "testuser"
       assert json_response(conn, 200)["email"] == "testuser@email.com"
     end
+
+    test "get all users" do
+      user1 = insert(:user, username: "testuser", email: "testuser@email.com")
+      insert(:user, username: "testuser2", email: "testuser2@email.com")
+      conn = get(build_conn(), "/api/users/all_users")
+      assert List.first(json_response(conn, 200))["username"] == user1.username
+    end
   end
 end

@@ -15,7 +15,7 @@ defmodule ClockingAppApiWeb.ClockController do
     |> CC.validate_params(params)
     |> UC.valid_changeset
     |> CC.clock_in
-    |> return_result("clock.json", conn)
+    |> return_result("result.json", conn)
   end
 
   def get_user_clock(conn, params) do
@@ -23,6 +23,11 @@ defmodule ClockingAppApiWeb.ClockController do
     |> CC.validate_params(params)
     |> UC.valid_changeset
     |> CC.get_user_clock
+    |> return_result("result.json", conn)
+  end
+
+  def get_all_clocks(conn, _params) do
+    CC.get_all_clocks
     |> return_result("result.json", conn)
   end
 

@@ -51,5 +51,15 @@ defmodule ClockingAppApiWeb.WorkingTimeControllerTest do
       assert json_response(conn, 200)["start_date"] == "2019-10-11T09:14:28"
       assert json_response(conn, 200)["end_date"] == "2023-11-07T09:14:28"
     end
+
+    test "get all working times" do
+      user1 = insert(:user, username: "testuser", email: "testuser@email.com")
+      user2 = insert(:user, username: "testuser2", email: "testuser2@email.com")
+      _wt1 = insert(:working_time, user_id: user1.id, start: "2019-10-11 09:14:28", end: "2023-11-07 09:14:28")
+      _wt2 = insert(:working_time, user_id: user2.id, start: "2020-10-11 09:14:28", end: "2023-11-07 09:14:28")
+
+      conn = get(build_conn(), "/api/workingtimes/all_working_times")
+      assert List.first(json_response(conn, 200))["user_id"] == user1.id
+    end
   end
 end

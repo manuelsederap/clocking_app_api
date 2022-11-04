@@ -54,6 +54,11 @@ defmodule ClockingAppApiWeb.WorkingTimeController do
     |> return_result("working_time.json", conn)
   end
 
+  def get_all_working_times(conn, _params) do
+    WTC.get_all_working_times
+    |> return_result("result.json", conn)
+  end
+
   # function that render error message result in json format with status code 400
   def return_result({:error, changeset}, _, conn) do
     conn

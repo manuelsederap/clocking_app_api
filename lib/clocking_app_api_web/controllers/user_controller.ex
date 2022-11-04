@@ -41,6 +41,11 @@ defmodule ClockingAppApiWeb.UserController do
     |> return_result("result.json", conn)
   end
 
+  def all_users(conn, _params) do
+    UserContext.get_all_users
+    |> return_result("result.json", conn)
+  end
+
   def user(conn, params) do
     :get_user
     |> UserContext.validate_params(params)

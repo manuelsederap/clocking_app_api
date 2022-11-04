@@ -11,20 +11,23 @@ defmodule ClockingAppApiWeb.Router do
       post "/", UserController, :create_user
       put "/:user_id", UserController, :update_user
       delete "/:user_id", UserController, :delete_user
-      get "/", UserController, :users
+      get "/all_users", UserController, :all_users
       get "/:user_id", UserController, :user
+      get "/", UserController, :users
     end
 
     scope "/workingtimes" do
       post "/:user_id", WorkingTimeController, :create
       put "/:id", WorkingTimeController, :update
       delete "/:id", WorkingTimeController, :delete
+      get "/all_working_times", WorkingTimeController, :get_all_working_times
       get "/:user_id", WorkingTimeController, :get_working_times
       get "/:user_id/:id", WorkingTimeController, :get_working_time
     end
 
     scope "/clocks" do
       post "/:user_id", ClockController, :clock_in
+      get "/all_clocks", ClockController, :get_all_clocks
       get "/:user_id", ClockController, :get_user_clock
     end
   end

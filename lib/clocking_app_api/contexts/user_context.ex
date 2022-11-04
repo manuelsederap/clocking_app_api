@@ -131,6 +131,16 @@ defmodule ClockingAppApi.Contexts.UserContext do
     end
   end
 
+  def get_all_users do
+    Users
+    |> select([u], %{
+      user_id: u.id,
+      username: u.username,
+      email: u.email
+    })
+    |> Repo.all()
+  end
+
   # get the user using user_id parameter
   def get_user_by_id(id), do: Users |> Repo.get_by(%{id: id})
 

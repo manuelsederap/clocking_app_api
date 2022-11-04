@@ -12,7 +12,8 @@ defmodule ClockingAppApi.Contexts.ClockContext do
   alias ClockingAppApi.Contexts.UtilityContext, as: UC
   alias ClockingAppApi.{
     Schemas.Clocks,
-    Schemas.Users
+    Schemas.Users,
+    Schemas.WorkingTimes
   }
 
   # validate parameter for create
@@ -29,7 +30,7 @@ defmodule ClockingAppApi.Contexts.ClockContext do
     |> validate_required(:time, message: "Enter time")
     |> validate_required(:status, message: "Enter status")
     |> validate_format(:user_id, ~r/(^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$)/, message: "Invalid User Id") #changeset validation format if user id is UUID valid
-    |> validate_format(:time, ~r/[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1]) (2[0-3]|[01][0-9]):[0-5][0-9]:[0-5][0-9]/, message: "time is in invalid format. Date should be in YYYY-MM-DD HH:mm:ss")
+    |> validate_format(:time, ~r/[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1]) (2[0-3]|[01][0-9]):[0-5][0-9]:[0-5][0-9]/, message: "Time is in invalid format. Time should be in YYYY-MM-DD HH:mm:ss")
     |> validate_inclusion(:status, [true, false], message: "status is invalid, allowed values are: true or false")
     |> validate_user_if_exist
     |> UC.is_valid_changeset?
@@ -102,9 +103,10 @@ defmodule ClockingAppApi.Contexts.ClockContext do
       status: true
     })
     |> Repo.insert!()
+    |> create_users_working_time() # create working time after clock-in
+    |> result_checker(:clock_in)
   end
 
-  # insert data pattern matchinng the User tag, if User tag clockin is false, status is false
   def insert_clock_data(%{clockin: false} = params) do
     %Clocks{}
     |> Clocks.changeset(%{
@@ -113,6 +115,37 @@ defmodule ClockingAppApi.Contexts.ClockContext do
       status: false
     })
     |> Repo.insert!()
+    |> update_users_working_time() # update working time after clock-out
+    |> result_checker(:clock_out)
+  end
+
+  def create_users_working_time(clock) do
+    %WorkingTimes{}
+    |> WorkingTimes.changeset(
+      %{
+        user_id: clock.user_id,
+        start: clock.time,
+      })
+    |> Repo.insert()
+  end
+
+  # insert data pattern matchinng the User tag, if User tag clockin is false, status is false
+
+  def update_users_working_time(clock) do
+    lwt = get_latest_working_time_of_user(clock.user_id)
+    lwt
+      |> WorkingTimes.changeset(%{
+        end: clock.time
+      })
+      |> Repo.update()
+  end
+
+  def get_latest_working_time_of_user(user_id) do
+    WorkingTimes
+    |> where([wtc], wtc.user_id == ^user_id)
+    |> order_by([wtc], desc: wtc.inserted_at)
+    |> limit(1)
+    |> Repo.one()
   end
 
   def get_user_clock({:error, changeset}), do: {:error, changeset}
@@ -129,6 +162,17 @@ defmodule ClockingAppApi.Contexts.ClockContext do
     |> Repo.all()
   end
 
+  def get_all_clocks do
+    Clocks
+    |> select([c], %{
+      id: c.id,
+      user_id: c.user_id,
+      time: c.time,
+      status: c.status
+    })
+    |> Repo.all()
+  end
+
   # Check result of Repo, if return ok, return Success message
   def result_checker({:ok, _}, :update), do: %{message: "Successfully Updated"}
 
@@ -141,4 +185,11 @@ defmodule ClockingAppApi.Contexts.ClockContext do
   # Check result of Repo, if return not ok, return Error message
   def result_checker({_, _}, :delete), do: %{message: "Error Deleting.."}
 
+  def result_checker({:ok, _}, :clock_in), do: %{message: "Successfully Clock-In"}
+
+  def result_checker({:error, _}, :clock_in), do: %{message: "Encounter Error"}
+
+  def result_checker({:ok, _}, :clock_out), do: %{message: "Successfully Clock-Out"}
+
+  def result_checker({:error, _}, :clock_out), do: %{message: "Encounter Error"}
 end
