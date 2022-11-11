@@ -8,7 +8,7 @@ defmodule ClockingAppApiWeb.ClockController do
   alias ClockingAppApi.Contexts.ClockContext, as: CC # alias/import ClockContext module
   alias ClockingAppApiWeb.ClockView, as: CV # alias/import ClockView module
 
-
+  # test commit
 
   def clock_in(conn, params) do
     :clock_in
