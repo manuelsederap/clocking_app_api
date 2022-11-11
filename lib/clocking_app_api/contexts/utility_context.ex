@@ -22,5 +22,5 @@ defmodule ClockingAppApi.Contexts.UtilityContext do
     end)
   end
 
-  defp transform_required(key, message), do: "#{message}"
+  defp transform_required(_key, message), do: "#{message}"
 end
