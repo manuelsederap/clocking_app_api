@@ -4,6 +4,8 @@ defmodule ClockingAppApiWeb.ClockController do
   """
   use ClockingAppApiWeb, :controller
 
+  #test git
+
   alias ClockingAppApi.Contexts.UtilityContext, as: UC # alias/import UtilityContext module
   alias ClockingAppApi.Contexts.ClockContext, as: CC # alias/import ClockContext module
   alias ClockingAppApiWeb.ClockView, as: CV # alias/import ClockView module
